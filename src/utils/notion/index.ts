@@ -428,6 +428,18 @@ export async function fetchNotionDatabaseSchema(
   return res as NotionDatabaseSchema;
 }
 
+let databaseInfo:any = null
+export const getDataSource = async (client: NotionClient, databaseId: string) => {
+  if (databaseInfo) {
+    return databaseInfo
+  }
+  const response = await client.databases.retrieve({
+    database_id: databaseId
+  })
+  databaseInfo = response
+  return response
+}
+
 /**
  * Fetches all pages in a database
  */
@@ -440,11 +452,11 @@ export async function fetchNotionDatabase(
   let allItems: NotionDatabaseEntry[] = [];
   let hasMore = true;
   let cursor: string | undefined;
-
+  const databaseInfo = await getDataSource(client, databaseId)
   while (hasMore) {
     const response = await rateLimiter.execute(() => {
-      return client.databases.query({
-        database_id: databaseId,
+      return client.dataSources.query({
+        data_source_id: databaseInfo.data_sources[0].id,
         filter: query?.filter,
         sorts: query?.sorts,
         start_cursor: cursor,
